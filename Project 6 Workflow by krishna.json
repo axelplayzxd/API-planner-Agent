@@ -1,0 +1,751 @@
+{
+  "name": "Project 6 Workflow by krishna",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -3888,
+        1104
+      ],
+      "id": "c611a8ab-ab38-442a-806c-067bf835397e",
+      "name": "When chat message received",
+      "webhookId": "e1216bf4-be98-4f61-880b-ad82f35f1cee"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e6fb1326-d636-4f78-9e68-c8961eb1eeb3",
+              "name": "endpoints",
+              "type": "array",
+              "value": [
+                {
+                  "endpoint_number": 1,
+                  "name": "Get a Single Order",
+                  "method": "GET",
+                  "path": "/orders/{order_id}",
+                  "purpose": "Retrieves detailed information about one specific order.",
+                  "path_parameters": [
+                    {
+                      "name": "order_id",
+                      "required": true,
+                      "description": "Unique ID of the order",
+                      "example": "ORD-10452"
+                    }
+                  ],
+                  "query_parameters": [],
+                  "response_fields": [
+                    "order_id",
+                    "customer_id",
+                    "created_at",
+                    "status",
+                    "payment_status",
+                    "total",
+                    "currency",
+                    "items"
+                  ]
+                },
+                {
+                  "endpoint_number": 2,
+                  "name": "List Orders",
+                  "method": "GET",
+                  "path": "/orders",
+                  "purpose": "Retrieves a list of orders. The endpoint supports filters that allow developers to retrieve selected records.",
+                  "path_parameters": [],
+                  "query_parameters": [
+                    {
+                      "name": "start_date",
+                      "required": false,
+                      "description": "Return orders created on or after this date",
+                      "example": "2026-09-01"
+                    },
+                    {
+                      "name": "end_date",
+                      "required": false,
+                      "description": "Return orders created on or before this date",
+                      "example": "2026-09-05"
+                    },
+                    {
+                      "name": "status",
+                      "required": false,
+                      "description": "Filter orders by status",
+                      "example": "completed"
+                    },
+                    {
+                      "name": "customer_id",
+                      "required": false,
+                      "description": "Return orders belonging to a specific customer",
+                      "example": "CUS-3021"
+                    },
+                    {
+                      "name": "page",
+                      "required": false,
+                      "description": "Page number for paginated results",
+                      "example": "1"
+                    },
+                    {
+                      "name": "limit",
+                      "required": false,
+                      "description": "Number of results returned per page",
+                      "example": "50"
+                    }
+                  ],
+                  "supported_status_values": [
+                    "pending",
+                    "processing",
+                    "ready_for_shipping",
+                    "shipped",
+                    "completed",
+                    "cancelled"
+                  ],
+                  "response_fields": [
+                    "page",
+                    "limit",
+                    "total_records",
+                    "orders"
+                  ]
+                },
+                {
+                  "endpoint_number": 3,
+                  "name": "Get Customer Details",
+                  "method": "GET",
+                  "path": "/customers/{customer_id}",
+                  "purpose": "Retrieves basic information about a specific customer.",
+                  "path_parameters": [
+                    {
+                      "name": "customer_id",
+                      "required": true,
+                      "description": "Unique customer identifier",
+                      "example": "CUS-3021"
+                    }
+                  ],
+                  "query_parameters": [],
+                  "response_fields": [
+                    "customer_id",
+                    "name",
+                    "email",
+                    "customer_since"
+                  ]
+                },
+                {
+                  "endpoint_number": 4,
+                  "name": "Get Order Delivery Information",
+                  "method": "GET",
+                  "path": "/orders/{order_id}/delivery",
+                  "purpose": "Retrieves delivery information for a specific order.",
+                  "path_parameters": [
+                    {
+                      "name": "order_id",
+                      "required": true,
+                      "description": "Unique ID of the order (implied by the path template)",
+                      "example": "ORD-10452"
+                    }
+                  ],
+                  "query_parameters": [],
+                  "response_fields": [
+                    "order_id",
+                    "delivery_status",
+                    "carrier",
+                    "tracking_reference",
+                    "estimated_delivery"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "58dfb7f1-cca3-43c2-9cbc-8b3058949fd7",
+              "name": "api_overview",
+              "type": "object",
+              "value": {
+                "api_name": "ConnectX Orders API",
+                "base_url": "https://api.connectx.demo/v1",
+                "format": "JSON",
+                "purpose": "The API allows approved applications to retrieve information about customers and orders from the ConnectX order-management platform. The project uses read-only API operations."
+              }
+            },
+            {
+              "id": "60b80b26-eadd-48c7-b9e7-0e567e42ec4b",
+              "name": "authentication",
+              "type": "object",
+              "value": {
+                "type": "API key authentication",
+                "header_name": "X-API-Key",
+                "example_header": "X-API-Key: YOUR_API_KEY",
+                "rules": [
+                  "Credentials must never be exposed in prompts, outputs, screenshots, reports, or presentations.",
+                  "Use fictional credentials or mocked responses for this project."
+                ]
+              }
+            },
+            {
+              "id": "d5833c83-b9f5-4e14-b109-bddc1ec14b2f",
+              "name": "rate_limit",
+              "type": "object",
+              "value": {
+                "max_requests_per_minute": 100,
+                "on_exceed": "The API returns a rate-limit error."
+              }
+            },
+            {
+              "id": "cfd0a4b7-a52b-47a0-8a35-88edf73ebe2e",
+              "name": "pagination",
+              "type": "object",
+              "value": {
+                "applies_to_endpoint": "/orders",
+                "max_records_per_request": 50,
+                "rule": "If more records exist, additional pages must be requested via page and limit."
+              }
+            },
+            {
+              "id": "b316fe03-8501-4393-9024-b1d2661fec71",
+              "name": "error_reference",
+              "type": "array",
+              "value": [
+                {
+                  "http_status": 200,
+                  "meaning": "Request successful",
+                  "guidance": "Continue processing the returned information"
+                },
+                {
+                  "http_status": 400,
+                  "meaning": "Invalid request",
+                  "guidance": "Check the request structure and parameters"
+                },
+                {
+                  "http_status": 401,
+                  "meaning": "Authentication failed",
+                  "guidance": "Check the API credentials"
+                },
+                {
+                  "http_status": 403,
+                  "meaning": "Access denied",
+                  "guidance": "Check whether the application has permission to access the resource"
+                },
+                {
+                  "http_status": 404,
+                  "meaning": "Resource not found",
+                  "guidance": "Check the requested order, customer, or endpoint"
+                },
+                {
+                  "http_status": 429,
+                  "meaning": "Too many requests",
+                  "guidance": "Reduce request frequency and retry after an appropriate delay"
+                },
+                {
+                  "http_status": 500,
+                  "meaning": "Server error",
+                  "guidance": "Record the error and retry later or send for technical review"
+                },
+                {
+                  "http_status": 503,
+                  "meaning": "Service unavailable",
+                  "guidance": "Pause processing and retry later"
+                }
+              ]
+            },
+            {
+              "id": "301f96da-572b-4f23-9948-fc353f09db44",
+              "name": "error_handling_rules",
+              "type": "array",
+              "value": [
+                "Repeated failed requests should not continue indefinitely.",
+                "Authentication failures should require developer review.",
+                "Rate-limit errors should not result in immediate repeated requests.",
+                "Missing records should not cause the complete integration process to fail unnecessarily.",
+                "Server-side errors should be recorded for investigation."
+              ]
+            },
+            {
+              "id": "f82b8f68-0de8-4cbb-aad0-f8de0af68b2c",
+              "name": "integration_review_rules",
+              "type": "array",
+              "value": [
+                "Endpoint Accuracy: any endpoint used must exist in this documentation. Do not invent endpoints.",
+                "Parameter Accuracy: required parameters must be included; optional parameters only when relevant.",
+                "Authentication: recognize the requirement without exposing credentials.",
+                "Pagination: consider it when a request may return more records than allowed in one response.",
+                "Error Handling: consider relevant errors and how the workflow should respond.",
+                "Data Minimization: retrieve and store only the information required for the stated business purpose.",
+                "Unsupported Requirements: clearly identify limitations. Do not invent functionality to satisfy a request.",
+                "Human Review: a developer must review and validate the plan before implementation."
+              ]
+            },
+            {
+              "id": "758e086e-5b1e-4b55-9b8c-687814b67403",
+              "name": "note_on_endpoints",
+              "type": "string",
+              "value": "These are the only four endpoints documented. No other endpoints, parameters, or response fields exist."
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3888,
+        1360
+      ],
+      "id": "ccf95756-b7c2-4e38-b4e3-babfefc79bf8",
+      "name": "API Documentation (JSON)"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -3648,
+        1456
+      ],
+      "id": "5c626ec6-e113-41ac-9a15-a26637e3036c",
+      "name": "Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "7PdOJtYAiCnmf1be",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"requesting_team\": {\n      \"type\": \"string\"\n    },\n    \"business_requirement\": {\n      \"type\": \"string\"\n    },\n    \"data_fields_needed\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"filters\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"start_date\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"end_date\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"status\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        },\n        \"customer_id\": {\n          \"type\": [\n            \"string\",\n            \"null\"\n          ]\n        }\n      }\n    },\n    \"record_type\": {\n      \"type\": \"string\"\n    },\n    \"frequency\": {\n      \"type\": \"string\"\n    },\n    \"destination\": {\n      \"type\": \"string\"\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -3360,
+        1360
+      ],
+      "id": "b06c0a28-43ab-4fca-b2bd-a18408ab045b",
+      "name": "Interpreter Output Parser"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"supported\": {\n      \"type\": \"boolean\"\n    },\n    \"plan_summary\": {\n      \"type\": \"string\"\n    },\n    \"endpoint_details\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"method\": {\n            \"type\": \"string\"\n          },\n          \"path\": {\n            \"type\": \"string\"\n          },\n          \"params\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          },\n          \"example_request\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"auth_note\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n    \"pagination_note\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n    \"rate_limit_note\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n    \"error_handling\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"code\": {\n            \"type\": \"string\"\n          },\n          \"guidance\": {\n            \"type\": \"string\"\n          }\n        }\n      }\n    },\n    \"data_minimization_note\": {\n      \"type\": \"string\"\n    },\n    \"unsupported_reason\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -3040,
+        1360
+      ],
+      "id": "253b4578-9270-45e7-9486-f40b2f432d15",
+      "name": "Plan Builder Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compares every endpoint path used in the plan against the real,\n// documented endpoint paths. Pure string comparison - no AI involved.\nconst doc = $('API Documentation (JSON)').first().json;\nconst validPaths = doc.endpoints.map(e => e.path);\n\nconst plan = $json.output;\nconst usedPaths = (plan.endpoint_details || []).map(e => e.path);\nconst invented = usedPaths.filter(p => !validPaths.includes(p));\n\nreturn [{\n  json: {\n    ...$json,\n    deterministic_check_passed: invented.length === 0,\n    invented_endpoints: invented,\n    valid_endpoint_paths_reference: validPaths\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2768,
+        1104
+      ],
+      "id": "a581cc34-f6ec-4c40-aeab-07fc84993e0e",
+      "name": "Deterministic Endpoint Check"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify({ plan: $json.output, deterministic_check_passed: $json.deterministic_check_passed, invented_endpoints: $json.invented_endpoints }) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ \"You are the Validator Agent for an API integration-planning workflow at ConnectX Technologies.\\n\\nYou will receive an assembled integration plan, PLUS the result of an automatic deterministic check that already compared every endpoint path in the plan against the real documented endpoint list (deterministic_check_passed, invented_endpoints).\\n\\nHARD RULE: if deterministic_check_passed is false, you MUST output pass = false and cite the exact invented_endpoints in failure_reason, regardless of anything else about the plan. This overrides every other consideration - a plan cannot pass if it used an endpoint path that does not exist.\\n\\nIf deterministic_check_passed is true, continue with your own checks using the documentation and rules below as your only source of truth. You are not checking writing quality - you are checking that the plan is fully grounded and correct.\\n\\n--- API DOCUMENTATION (JSON) ---\\n\" + JSON.stringify($('API Documentation (JSON)').first().json) + \"\\n\\nCheck, in this order (only reached if the deterministic check already passed):\\n1. Unsupported-claim check: if the plan claims supported = false, is that reason accurate - i.e. genuinely impossible with the documented endpoints, not a case where a valid endpoint was overlooked?\\n2. Correctness check: if the plan claims supported = true, is the endpoint and parameter choice actually the right fit for the stated business requirement?\\n3. Credential check: does the plan avoid exposing any real-looking API key value?\\n\\nIf all checks pass, output pass = true.\\nIf any check fails, output pass = false with a specific reason.\\n\\nOutput format: structured JSON with keys:\\n- pass (boolean)\\n- failure_reason (string or null)\" }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2560,
+        1104
+      ],
+      "id": "c49bdd8a-7f18-4ff0-8a2f-74737335146b",
+      "name": "Validator Agent"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"pass\": {\n      \"type\": \"boolean\"\n    },\n    \"failure_reason\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -2560,
+        1360
+      ],
+      "id": "c3363b24-afcc-4ab7-936f-9b9d430e9ed4",
+      "name": "Validator Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "174cec96-5dda-492c-9892-da6e625a5f7e",
+              "leftValue": "={{ $json.output.pass }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2256,
+        1120
+      ],
+      "id": "2cf17985-8d69-4f24-935f-37f868073092",
+      "name": "Validation Passed?"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "krishna.pariyar@fishtailmountain.edu.np",
+        "subject": "=Integration plan approval needed",
+        "message": "=<h2>Integration Plan Review</h2><p><strong>Requesting Team:</strong> {{ $('request identifier Agent').item.json.output.requesting_team }}</p><p><strong>Requirement:</strong> {{ $('request identifier Agent').item.json.output.business_requirement }}</p><p><strong>Supported:</strong> {{ $('planner Agent').item.json.output.supported }}</p><p><strong>Summary:</strong><br>{{ $('planner Agent').item.json.output.plan_summary }}</p><pre>{{ JSON.stringify($('planner Agent').item.json.output, null, 2) }}</pre>",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Decision",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve"
+                  },
+                  {
+                    "option": "Decline"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 45,
+              "resumeUnit": "minutes"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -2064,
+        992
+      ],
+      "id": "5b3d826f-a6e0-463e-963b-54a493fe006d",
+      "name": "Developer Review",
+      "webhookId": "529fd4ba-74e9-46d1-9339-481b31aa2bc6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0Md6V6qfMav9JgQh",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c48c3bd6-88be-4580-98f9-908a5dcc203f",
+              "leftValue": "={{ $json.data.Decision }}",
+              "rightValue": "Approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1824,
+        992
+      ],
+      "id": "e41363ac-4a84-415b-98a5-2a0f9ebff732",
+      "name": "Approved?"
+    },
+    {
+      "parameters": {
+        "sendTo": "krishna.pariyar@fishtailmountain.edu.np",
+        "subject": "Approved integration plan - ready for implementation",
+        "message": "=<h2>Approved Integration Plan</h2>\n<p><strong>Requesting Team:</strong> {{ $('request identifier Agent').item.json.output.requesting_team }}</p>\n<p><strong>Summary:</strong><br>{{ $('planner Agent').item.json.output.plan_summary }}</p>\n<pre>{{ JSON.stringify($('planner Agent').item.json.output, null, 2) }}</pre>\n<p>This plan has been approved and is ready for implementation.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -1584,
+        880
+      ],
+      "id": "f7787248-1ed7-4205-987a-99f3d8f87b32",
+      "name": "Send Final Plan",
+      "webhookId": "9d26568d-dd67-4c0f-9d36-679ce7372251",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0Md6V6qfMav9JgQh",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the Requirement Interpreter Agent for an API integration-planning workflow.\n\nYou will receive one developer integration requirement (requesting team, business requirement, data needed, destination, frequency), written in plain English.\n\nExtract it into structured intent. Do not guess at API capabilities, endpoints, or parameters - that is not your job. Only describe what the requester needs, in neutral terms.\n\nOutput format: structured JSON with these keys:\n- requesting_team (string)\n- business_requirement (string, one sentence summary)\n- data_fields_needed (array of strings)\n- filters (object: start_date, end_date, status, customer_id - use null for any not implied)\n- record_type (\"single\" or \"list\")\n- frequency (string)\n- destination (string)\n\nDo not mention any API endpoint, parameter name, or capability. That happens in a later step."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -3360,
+        1104
+      ],
+      "id": "560aeaf8-fa73-4fd2-b325-c80741891091",
+      "name": "request identifier Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output && $json.output.failure_reason ? 'Revise the integration plan. Validation failed for this reason: ' + $json.output.failure_reason + '. Original requirement details: ' + JSON.stringify($('request identifier Agent').item.json.output) : ($json.data && $json.data.Decision === 'Decline' ? 'This plan was declined by the developer with no specific comments provided. Re-examine your endpoint and parameter choices against the documentation and produce a corrected, revised plan for this requirement: ' + JSON.stringify($('request identifier Agent').item.json.output) : JSON.stringify($('request identifier Agent').item.json.output)) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ \"You are the Plan Builder Agent for an API integration-planning workflow at ConnectX Technologies.\\n\\nYou will receive structured intent describing what a developer needs. Your only source of truth is the API documentation JSON provided below. Never invent endpoints, parameters, or response fields that are not explicitly listed in it. If a needed field or filter is not in the documentation, do not substitute a plausible-sounding one - state the limitation instead.\\n\\n--- API DOCUMENTATION (JSON) ---\\n\" + JSON.stringify($('API Documentation (JSON)').first().json) + \"\\n\\nYour task, using ONLY what is documented above:\\n1. Match the intent to one or more real endpoints (use the exact \\\"path\\\" values from the documentation). Some requirements legitimately need more than one endpoint. If nothing documented satisfies the intent, set supported to false and explain exactly what capability is missing - do not force a match.\\n2. If supported, select only the parameters that are documented AND relevant to this intent.\\n3. Note the authentication requirement (the header named in \\\"authentication.header_name\\\" is required; never output a real key value).\\n4. If record_type is \\\"list\\\" and the request could plausibly exceed the \\\"pagination.max_records_per_request\\\" value, describe pagination. Otherwise say pagination does not apply.\\n5. If frequency implies repeated polling, assess rate-limit risk against \\\"rate_limit.max_requests_per_minute\\\". Otherwise say it does not apply.\\n6. Select only the error codes from \\\"error_reference\\\" that are realistically relevant to this request and state guidance for each.\\n7. Add a data-minimization note confirming only the requested fields will be retrieved.\\n\\nYou may also receive a revision instruction (from a failed validation or a developer decline). If so, re-examine your endpoint and parameter choices against the documentation JSON and produce a corrected plan - do not just repeat the same plan.\\n\\nIMPORTANT: every value you put in \\\"endpoint_details[].path\\\" must be copied EXACTLY, character for character, from an endpoint's \\\"path\\\" field in the documentation above.\\n\\nOutput format: structured JSON with keys:\\n- supported (boolean)\\n- plan_summary (string)\\n- endpoint_details (array of {method, path, params, example_request}, empty if unsupported)\\n- auth_note, pagination_note, rate_limit_note (strings, or null if unsupported)\\n- error_handling (array of {code, guidance})\\n- data_minimization_note (string)\\n- unsupported_reason (string or null)\" }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -3040,
+        1104
+      ],
+      "id": "f0dcf5e6-4394-4fde-8d67-882cfe7dc940",
+      "name": "planner Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "API Documentation (JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "request identifier Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "planner Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Validator Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpreter Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "request identifier Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Builder Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "planner Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deterministic Endpoint Check": {
+      "main": [
+        [
+          {
+            "node": "Validator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validator Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Validator Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validator Agent": {
+      "main": [
+        [
+          {
+            "node": "Validation Passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Passed?": {
+      "main": [
+        [
+          {
+            "node": "Developer Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "planner Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Developer Review": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Send Final Plan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "planner Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Documentation (JSON)": {
+      "main": [
+        [
+          {
+            "node": "request identifier Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "request identifier Agent": {
+      "main": [
+        [
+          {
+            "node": "planner Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "planner Agent": {
+      "main": [
+        [
+          {
+            "node": "Deterministic Endpoint Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "921f486a-9bec-4e10-8f60-a5239a7d6360",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9180f6a768a8d73b18abc1dae20af000f6cf83065a73f951fcb2be261fc6d2d3"
+  },
+  "nodeGroups": [],
+  "id": "FAbSZMlM2JpjTQNO",
+  "tags": []
+}
